@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Bebas+Neue&family=IBM+Plex+Sans:wght@500;600;700&family=Rubik:wght@500;600;700&family=Roboto+Condensed:wght@700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #C8102E;
+  --color-dark: #111111;
+  --color-light: #F0F0F0;
+  --font-sans: 'DM Sans', sans-serif;
+  --font-display: 'Barlow Condensed', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: white;
+  color: #111111;
+  font-size: 16px;
+}
+
+.table-head th {
+  padding: 14px 16px;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+
+.table-row td {
+  padding: 15px 16px;
+  font-size: 16px;
+}
+
+.input {
+  font-size: 15px;
+}
+
+.badge-red {
+  background: #C8102E;
+  color: white;
+  font-size: 15px;
+  padding: 5px 10px;
+  border-radius: 0;
+  font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: inline-block;
+}
+.badge-green {
+  background: #16a34a;
+  color: white;
+  font-size: 13px;
+  padding: 5px 12px;
+  border-radius: 0;
+  font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: inline-block;
+}
+.badge-gray {
+  background: #e8e8e8;
+  color: #444;
+  font-size: 15px;
+  padding: 5px 10px;
+  border-radius: 0;
+  font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.section-title {
+  font-size: 3.5rem;
+}
+
+.btn-primary, .btn-secondary, .btn-outline {
+  font-size: 16px;
+  padding: 11px 22px;
+}
+
+/* ── Cards ── */
+.card {
+  background: white;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+  border-left: 4px solid #C8102E;
+  padding: 20px;
+}
+
+/* ── Inputs ── */
+.input {
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid #e0e0e0;
+  border-radius: 0;
+  padding: 10px 4px;
+  font-size: 14px;
+  outline: none;
+  background: transparent;
+  transition: border-color 0.2s;
+  font-family: 'DM Sans', sans-serif;
+  color: #111;
+}
+.input:focus { border-bottom-color: #C8102E; }
+
+select.input {
+  background: white;
+  border: 2px solid #e0e0e0;
+  padding: 8px 12px;
+  border-radius: 0;
+}
+select.input:focus { border-color: #C8102E; }
+
+/* ── Tables ── */
+.table-head {
+  background: #111111;
+  color: white;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.table-head th {
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.table-row { border-bottom: 1px solid #e8e8e8; transition: background 0.1s; }
+.table-row:hover { background: #fafafa; }
+.table-row td { padding: 13px 16px; }
+
+/* ── Badges ── */
+.badge-red {
+  background: #C8102E;
+  color: white;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 0;
+  font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.badge-green {
+  background: #111111;
+  color: white;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 0;
+  font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.badge-gray {
+  background: #e8e8e8;
+  color: #555;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 0;
+  font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ── Modals ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+.modal-box {
+  background: white;
+  border-radius: 0;
+  border-top: 4px solid #C8102E;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+  width: 100%;
+  max-width: 520px;
+  padding: 32px;
+}
+
+/* ── Section Title ── */
+.section-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #111111;
+  line-height: 1;
+}
