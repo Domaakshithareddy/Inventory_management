@@ -56,7 +56,7 @@ function SearchableSelect({ options, value, onChange, placeholder = "Search...",
 const emptyItem = { product_id: "", quantity_cases: 0, quantity_units: 0, price_per_case: 0, price_per_unit: 0, bottles_per_case: 24, total_price: 0 };
 const emptyFreeItem = { product_id: "", quantity_units: "" };
 
-const labelStyle = { fontSize: "11px", color: "#888", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600 };
+const labelStyle = { fontSize: "13px", color: "#111", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600 };
 const actionBtn = (color) => ({ color, fontSize: "15px", background: "none", border: "none", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" });
 
 export default function Bills() {
@@ -525,11 +525,11 @@ export default function Bills() {
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", alignItems: "end" }}>
                         <div>
                           <label style={labelStyle}>Cases</label>
-                          <input type="number" className="input" style={{ marginTop: "4px" }} value={item.quantity_cases} onChange={e => updateItem(i, "quantity_cases", e.target.value)} min="0" placeholder="0" />
+                          <input type="number" className="input" style={{ marginTop: "4px" }} value={item.quantity_cases || ''} onChange={e => updateItem(i, "quantity_cases", e.target.value)} min="0" placeholder="0" />
                         </div>
                         <div>
                           <label style={labelStyle}>Extra Bottles</label>
-                          <input type="number" className="input" style={{ marginTop: "4px" }} value={item.quantity_units} onChange={e => updateItem(i, "quantity_units", e.target.value)} min="0" placeholder="0" />
+                          <input type="number" className="input" style={{ marginTop: "4px" }} value={item.quantity_units || ''} onChange={e => updateItem(i, "quantity_units", e.target.value)} min="0" placeholder="0" />
                         </div>
                         <div style={{ textAlign: "right" }}>
                           <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "1.4rem", color: "#111" }}>₹{parseFloat(item.total_price || 0).toLocaleString()}</span>

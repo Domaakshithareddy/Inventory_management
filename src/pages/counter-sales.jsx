@@ -100,8 +100,9 @@ const emptyItem = {
   quantity_cases: "",
   quantity_units: "",
   price_per_unit: "",
-  payment_mode: "CASH"
 };
+
+const emptyFreeItem = { product_id: "", quantity_units: "" };
 
 export default function CounterSales() {
   const { user } = useAuth();
@@ -118,6 +119,8 @@ export default function CounterSales() {
   const [godowns, setGodowns] = useState([]);
   const [selectedGodown, setSelectedGodown] = useState("");
   const [newGodown, setNewGodown] = useState("");
+  const [freeItems, setFreeItems] = useState([]);
+  const [paymentMode, setPaymentMode] = useState("CASH");
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -165,6 +168,11 @@ export default function CounterSales() {
 
   const addItem = () => setItems([...items, { ...emptyItem }]);
   const removeItem = (i) => setItems(items.filter((_, idx) => idx !== i));
+  const updateFreeItem = (i, field, val) => {
+    setFreeItems(prev => prev.map((fi, idx) => idx === i ? { ...fi, [field]: val } : fi));
+  };
+  const addFreeItem = () => setFreeItems(prev => [...prev, { ...emptyFreeItem }]);
+  const removeFreeItem = (i) => setFreeItems(prev => prev.filter((_, idx) => idx !== i));
 
   const getBottles = (item) => {
     const p = products.find(p => p.id === item.product_id);
@@ -188,12 +196,23 @@ export default function CounterSales() {
           product_id: item.product_id,
           quantity_units: totalBottles,
           price_per_unit: parseFloat(item.price_per_unit || 0),
-          payment_mode: item.payment_mode || "CASH",
+          payment_mode: paymentMode,
           godown_id: isAdmin ? newGodown : undefined
+        });
+      }
+      for (const fi of freeItems) {
+        if (!fi.product_id || !fi.quantity_units) continue;
+        await api.post("/free-products", {
+          product_id: fi.product_id,
+          quantity_units: parseInt(fi.quantity_units),
+          given_date: new Date().toISOString().split("T")[0],
+            notes: "Given with counter sale"
         });
       }
       setModal(false);
       setItems([{ ...emptyItem }]);
+      setFreeItems([]);
+      setPaymentMode("CASH");
       load();
     } catch (err) {
       alert(err.response?.data?.error || "Failed to record sale");
@@ -264,7 +283,7 @@ export default function CounterSales() {
   };
 
   const labelStyle = {
-    fontSize: "11px", color: "#888", textTransform: "uppercase",
+    fontSize: "13px", color: "#111", textTransform: "uppercase",
     letterSpacing: "0.08em", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600
   };
 
@@ -439,72 +458,48 @@ export default function CounterSales() {
                 const itemTotal = getItemTotal(item);
 
                 return (
-                  <div key={i} style={{ background: "#f8f8f8", borderLeft: "3px solid #e0e0e0", padding: "16px", marginBottom: "12px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                      <label style={labelStyle}>Item {i + 1}</label>
+                  <div key={i} style={{ background: "#f8f8f8", borderLeft: "3px solid #e0e0e0", padding: "12px", marginBottom: "10px" }}>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", marginBottom: "8px" }}>
+                      <div style={{ flex: 1 }}>
+                        <SearchableSelect
+                          options={productOptions}
+                          value={item.product_id}
+                          onChange={val => updateItem(i, "product_id", val)}
+                          placeholder="Search product..."
+                          required
+                        />
+                      </div>
                       {items.length > 1 && (
                         <button type="button" onClick={() => removeItem(i)}
-                          style={{ color: "#aaa", background: "none", border: "none", fontSize: "20px", cursor: "pointer" }}>✕</button>
+                          style={{ color: "#aaa", background: "none", border: "none", cursor: "pointer", fontSize: "16px", marginTop: "8px", flexShrink: 0 }}>✕</button>
                       )}
                     </div>
-
-                    <div style={{ marginBottom: "12px" }}>
-                      <label style={labelStyle}>Product</label>
-                      <SearchableSelect
-                        options={productOptions}
-                        value={item.product_id}
-                        onChange={val => updateItem(i, "product_id", val)}
-                        placeholder="Search product..."
-                        required
-                      />
-                      {selectedProduct && (
-                        <p style={{ fontSize: "11px", color: "#aaa", marginTop: "4px", fontFamily: "'Barlow Condensed', sans-serif" }}>
-                          {bpc} bottles/case &nbsp;|&nbsp; ₹{selectedProduct.selling_price_per_unit}/bottle
-                        </p>
-                      )}
-                    </div>
-
+                    {selectedProduct && (
+                      <p style={{ fontSize: "13px", color: "#111", margin: "0 0 10px", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600 }}>
+                        ₹{selectedProduct.selling_price_per_unit}/bottle &nbsp;|&nbsp; {bpc} bottles/case
+                      </p>
+                    )}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", alignItems: "end", marginBottom: "12px" }}>
                       <div>
                         <label style={labelStyle}>Cases</label>
-                        <input type="number" className="input" style={{ marginTop: "6px" }}
+                        <input type="number" className="input" style={{ marginTop: "4px" }}
                           value={item.quantity_cases} onChange={e => updateItem(i, "quantity_cases", e.target.value)} min="0" placeholder="0" />
                       </div>
                       <div>
                         <label style={labelStyle}>Extra Bottles</label>
-                        <input type="number" className="input" style={{ marginTop: "6px" }}
+                        <input type="number" className="input" style={{ marginTop: "4px" }}
                           value={item.quantity_units} onChange={e => updateItem(i, "quantity_units", e.target.value)} min="0" placeholder="0" />
                       </div>
                       <div>
                         <label style={labelStyle}>Price / Bottle</label>
-                        <input type="number" className="input" style={{ marginTop: "6px" }}
+                        <input type="number" className="input" style={{ marginTop: "4px" }}
                           value={item.price_per_unit} onChange={e => updateItem(i, "price_per_unit", e.target.value)} placeholder="0" required />
                       </div>
                     </div>
-
-                    {/* Payment Mode toggle */}
-                    <div>
-                      <label style={labelStyle}>Payment Mode</label>
-                      <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
-                        <button type="button"
-                          style={modeBtn(item.payment_mode === "CASH", "#16a34a")}
-                          onClick={() => updateItem(i, "payment_mode", "CASH")}>
-                          Cash
-                        </button>
-                        <button type="button"
-                          style={modeBtn(item.payment_mode === "ONLINE", "#2563eb")}
-                          onClick={() => updateItem(i, "payment_mode", "ONLINE")}>
-                          Online
-                        </button>
-                      </div>
-                    </div>
-
                     {totalBottles > 0 && (
-                      <div style={{ marginTop: "16px", paddingTop: "12px", borderTop: "1px solid #e8e8e8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: "14px", color: "#555", fontWeight: 500 }}>{totalBottles} bottles total</span>
-                        <span style={{ fontFamily: "'IBM Plex Sans', sans-serif", fontWeight: 700, fontSize: "1.25rem", color: "#16a34a" }}>
-                          ₹{itemTotal.toLocaleString()}
-                        </span>
+                      <div style={{ marginTop: "12px", paddingTop: "10px", borderTop: "1px solid #e8e8e8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "14px", color: "#555" }}>{totalBottles} bottles</span>
+                        <span style={{ fontFamily: "'IBM Plex Sans', sans-serif", fontWeight: 700, fontSize: "1.2rem", color: "#16a34a" }}>₹{itemTotal.toLocaleString()}</span>
                       </div>
                     )}
                   </div>
@@ -512,19 +507,52 @@ export default function CounterSales() {
               })}
 
               <button type="button" onClick={addItem}
-                style={{ width: "100%", padding: "12px", border: "2px dashed #e0e0e0", background: "none", color: "#C8102E", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "15px", textTransform: "uppercase", letterSpacing: "0.06em", margin: "16px 0" }}>
-                + Add Another Product
+                style={{ color: "#C8102E", fontSize: "15px", background: "none", border: "none", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: "16px" }}>
+                + Add Product
               </button>
 
               {grandTotal > 0 && (
-                <div style={{ background: "#f8f8f8", borderLeft: "4px solid #16a34a", padding: "16px", marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ background: "#f8f8f8", borderLeft: "4px solid #16a34a", padding: "16px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={labelStyle}>Grand Total</span>
                   <span style={{ fontFamily: "'IBM Plex Sans', sans-serif", fontSize: "1.8rem", fontWeight: 700, color: "#16a34a" }}>
                     ₹{grandTotal.toLocaleString()}
                   </span>
                 </div>
               )}
-
+              <div style={{ marginBottom: "20px" }}>
+                <label style={labelStyle}>Payment Mode</label>
+                <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                  <button type="button" style={modeBtn(paymentMode === "CASH", "#16a34a")} onClick={() => setPaymentMode("CASH")}>Cash</button>
+                  <button type="button" style={modeBtn(paymentMode === "ONLINE", "#2563eb")} onClick={() => setPaymentMode("ONLINE")}>Online</button>
+                </div>
+              </div>
+              <div style={{ borderTop: "2px solid #f0f0f0", paddingTop: "16px", marginBottom: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                  <div>
+                    <label style={labelStyle}>Free Products <span style={{ color: "#111", fontWeight: 400, textTransform: "none", fontSize: "13px" }}>(optional)</span></label>
+                    <p style={{ fontSize: "11px", color: "#bbb", margin: "2px 0 0", fontFamily: "'Barlow Condensed', sans-serif" }}>Won't affect inventory • Will appear in Free Products page</p>
+                  </div>
+                  <button type="button" onClick={addFreeItem} style={{ color: "#16a34a", fontSize: "12px", background: "none", border: "none", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>+ Add Free Item</button>
+                </div>
+                {freeItems.length === 0 && (
+                  <p style={{ fontSize: "13px", color: "#ccc", fontFamily: "'Barlow Condensed', sans-serif", textAlign: "center", padding: "8px 0" }}>No free products — click + Add Free Item to add</p>
+                )}
+                {freeItems.map((fi, i) => (
+                  <div key={i} style={{ background: "#f0fdf4", borderLeft: "3px solid #16a34a", padding: "12px", marginBottom: "10px" }}>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", marginBottom: "8px" }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ ...labelStyle, color: "#16a34a" }}>Product</label>
+                        <SearchableSelect options={productOptions} value={fi.product_id} onChange={val => updateFreeItem(i, "product_id", val)} placeholder="Search product..." />
+                      </div>
+                      <button type="button" onClick={() => removeFreeItem(i)} style={{ color: "#aaa", background: "none", border: "none", cursor: "pointer", fontSize: "16px", marginTop: "22px", flexShrink: 0 }}>✕</button>
+                    </div>
+                    <div>
+                      <label style={{ ...labelStyle, color: "#16a34a" }}>Bottles (free)</label>
+                      <input type="number" className="input" style={{ marginTop: "4px" }} value={fi.quantity_units} onChange={e => updateFreeItem(i, "quantity_units", e.target.value)} min="1" placeholder="0" />
+                    </div>
+                  </div>
+                ))}
+              </div>
               <div style={{ display: "flex", gap: "12px" }}>
                 <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={loadingNew}>
                   {loadingNew ? "Saving..." : "Record Sale"}
