@@ -598,7 +598,7 @@ export default function Bills() {
                       td { padding:3px 0; font-size:12px; }
                       .num { font-family: "Courier New", monospace; }
                       .right { text-align:right; }
-                      .draft { text-align:center; font-size:11px; color:#888; font-style:italic; margin-bottom:8px; }
+                      .draft { text-align:center; font-size:11px; color:#111; font-style:italic; margin-bottom:8px; }
                       @media print { body { padding:5px; } }
                     </style>
                   </head><body>
