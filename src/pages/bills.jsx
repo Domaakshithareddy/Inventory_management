@@ -244,7 +244,66 @@ export default function Bills() {
   const printBill = async (bill) => {
     const items = (await api.get(`/bills/${bill.id}/items`)).data;
     const win = window.open('', '_blank');
-    win.document.write(`<html><head><title>Bill #${bill.bill_number}</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Courier New',monospace;font-size:13px;padding:20px;max-width:300px;margin:auto;}.center{text-align:center;}.bold{font-weight:bold;}.line{border-top:1px dashed #000;margin:8px 0;}.row{display:flex;justify-content:space-between;margin:4px 0;}.title{font-size:18px;font-weight:bold;text-align:center;margin-bottom:4px;}.small{font-size:11px;color:#555;}table{width:100%;border-collapse:collapse;margin:8px 0;}th{text-align:left;font-size:11px;border-bottom:1px solid #000;padding:3px 0;}td{padding:3px 0;font-size:12px;}.total-row{font-weight:bold;font-size:14px;}@media print{body{padding:0;}}</style></head><body><div class="title">INVENTORY</div><div class="center small">${bill.godown_name}</div><div class="line"></div><div class="row"><span>Bill #:</span><span class="bold">${bill.bill_number}</span></div><div class="row"><span>Date:</span><span>${new Date(bill.created_at).toLocaleDateString('en-IN')}</span></div><div class="row"><span>Shop:</span><span class="bold">${bill.shop_name}</span></div>${bill.driver_name ? `<div class="row"><span>Driver:</span><span>${bill.driver_name}</span></div>` : ''}${bill.delivery_date ? `<div class="row"><span>Delivery:</span><span>${new Date(bill.delivery_date).toLocaleDateString('en-IN')}</span></div>` : ''}<div class="line"></div><table><thead><tr><th>Product</th><th>Qty</th><th>Rate</th><th>Amt</th></tr></thead><tbody>${items.map(item => `<tr><td>${item.product_name}</td><td>${item.quantity_cases > 0 ? item.quantity_cases + 'C' : ''}${item.quantity_units > 0 ? ' ' + item.quantity_units + 'B' : ''}</td><td>₹${item.quantity_cases > 0 ? item.price_per_case : item.price_per_unit}</td><td>₹${Number(item.total_price).toLocaleString()}</td></tr>`).join('')}</tbody></table><div class="line"></div><div class="row total-row"><span>TOTAL</span><span>₹${Number(bill.total_amount).toLocaleString()}</span></div><div class="row"><span>Paid</span><span>₹${Number(bill.paid_amount || 0).toLocaleString()}</span></div><div class="row bold"><span>Pending</span><span>₹${Number(bill.pending_amount || 0).toLocaleString()}</span></div><div class="line"></div><div class="center small" style="margin-top:12px;">Thank you!</div></body></html>`);
+    win.document.write(`<html><head><title>Bill #${bill.bill_number}</title>
+      <style>
+        /* receipt-sized box + clean readable fonts + tabular numbers */
+        @media print { body{margin:0;padding:8px;} }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+          font-size:12px;
+          color:#111;
+          padding:20px;
+          max-width:300px;    /* keep receipt width */
+          width:300px;        /* explicit width for print */
+          margin:auto;
+          box-sizing:border-box;
+        }
+        .title { font-size:16px; font-weight:800; text-align:center; margin-bottom:4px; }
+        .shop-name { font-size:14px; font-weight:700; text-align:center; margin-bottom:6px; color:#111; }
+        .center { text-align:center; font-size:11px; color:#555; margin-bottom:8px; }
+        .line { border-top:1px dashed #000; margin:8px 0; }
+        .row{display:flex;justify-content:space-between;margin:4px 0;line-height:1;}
+        table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px;}
+        th{text-align:left;font-size:11px;border-bottom:1px solid #000;padding:3px 0;text-transform:uppercase;}
+        td{padding:3px 0;font-size:12px;}
+        .total-row{font-weight:700;font-size:13px;}
+        /* numeric font: tabular numbers for consistent alignment */
+        .num { font-family: "Roboto Mono", "Courier New", monospace; font-variant-numeric: tabular-nums; }
+        .right { text-align:right; }
+        @media print{ .title{font-size:15px;} body{max-width:300px;width:300px;} }
+      </style>
+    </head><body>
+      <div class="title">SHOP BILL</div>
+      <div class="shop-name">${bill.shop_name}</div>
+      <div class="center small">${bill.godown_name}</div>
+      <div class="line"></div>
+      <div class="row"><span>Bill #:</span><span class="num">#${bill.bill_number}</span></div>
+      <div class="row"><span>Date:</span><span class="num">${new Date(bill.created_at).toLocaleDateString('en-IN')}</span></div>
+      <div class="row"><span>Shop:</span><span class="num">${bill.shop_name}</span></div>
+      ${bill.driver_name ? `<div class="row"><span>Driver:</span><span class="num">${bill.driver_name}</span></div>` : ''}
+      ${bill.delivery_date ? `<div class="row"><span>Delivery:</span><span class="num">${new Date(bill.delivery_date).toLocaleDateString('en-IN')}</span></div>` : ''}
+      <div class="line"></div>
+      <table><thead><tr>
+        <th>Product</th><th style="text-align:center">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amt</th>
+      </tr></thead><tbody>
+      ${items.map(item => {
+        const qty = `${item.quantity_cases > 0 ? item.quantity_cases + 'C' : ''}${item.quantity_units > 0 ? ' ' + item.quantity_units + 'B' : ''}`;
+        const rate = item.quantity_cases > 0 ? item.price_per_case : item.price_per_unit;
+        return `<tr>
+          <td style="font-weight:600">${item.product_name}</td>
+          <td style="text-align:center">${qty || '—'}</td>
+          <td class="right num">₹${Number(rate).toLocaleString()}</td>
+          <td class="right num">₹${Number(item.total_price).toLocaleString()}</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>
+      <div class="line"></div>
+      <div class="row total-row"><span>TOTAL</span><span class="num">₹${Number(bill.total_amount).toLocaleString()}</span></div>
+      <div class="row"><span>Paid</span><span class="num">₹${Number(bill.paid_amount || 0).toLocaleString()}</span></div>
+      <div class="row bold"><span>Pending</span><span class="num">₹${Number(bill.pending_amount || 0).toLocaleString()}</span></div>
+      <div class="line"></div>
+      <div class="center small" style="margin-top:12px;">Thank you!</div>
+    </body></html>`);
     win.document.close(); win.focus(); win.print(); win.close();
   };
 
