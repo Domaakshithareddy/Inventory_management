@@ -5,12 +5,12 @@ const auth = require('../middleware/auth');
 router.get('/', auth, async (req, res) => {
   try {
     let query = `
-      SELECT b.*, s.name as shop_name, g.name as godown_name,
-             d.name as driver_name
+      SELECT b.*, s.name as shop_name, g.name as godown_name, d.name as driver_name, r.name as route_name
       FROM bills b
       JOIN shops s ON b.shop_id = s.id
       JOIN godowns g ON b.godown_id = g.id
       LEFT JOIN drivers d ON b.driver_id = d.id
+      LEFT JOIN routes r ON s.route_id = r.id
     `;
     const params = [];
     if (req.user.role === 'godown') {
