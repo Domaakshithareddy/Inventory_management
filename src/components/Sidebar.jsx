@@ -20,6 +20,7 @@ const allLinks = [
   { to: "/reports", label: "Reports" },
   { to: "/routes", label: "Routes" },
   { to: "/shops", label: "Shops" },
+  { to: "/transfers", label: "Transfers" },
 ];
 
 export default function Sidebar() {
