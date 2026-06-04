@@ -229,7 +229,7 @@ export default function Bills() {
       });
       for (const fi of form.freeItems) {
         if (!fi.product_id || !fi.quantity_units) continue;
-        await api.post("/free-products", { product_id: fi.product_id, quantity_units: parseInt(fi.quantity_units), shop_id: form.shop_id, given_date: form.delivery_date, notes: "Given with bill" });
+        await api.post("/free-products", { product_id: fi.product_id, quantity_units: parseInt(fi.quantity_units), shop_id: form.shop_id, given_date: form.delivery_date, notes: "Given with bill", sale_type: "DELIVERY" });
       }
       setModal(false);
       setForm({ shop_id: "", driver_id: "", delivery_date: makeTomorrow(), paid_amount: "", items: [{ ...emptyItem }], freeItems: [] });

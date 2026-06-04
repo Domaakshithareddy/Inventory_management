@@ -202,12 +202,7 @@ export default function CounterSales() {
       }
       for (const fi of freeItems) {
         if (!fi.product_id || !fi.quantity_units) continue;
-        await api.post("/free-products", {
-          product_id: fi.product_id,
-          quantity_units: parseInt(fi.quantity_units),
-          given_date: new Date().toISOString().split("T")[0],
-            notes: "Given with counter sale"
-        });
+        await api.post("/free-products", { product_id: fi.product_id, quantity_units: parseInt(fi.quantity_units), given_date: new Date().toISOString().split("T")[0], notes: "Given with counter sale", sale_type: "COUNTER" });
       }
       setModal(false);
       setItems([{ ...emptyItem }]);
