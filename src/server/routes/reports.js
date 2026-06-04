@@ -832,7 +832,7 @@ router.get('/dashboard', auth, async (req, res) => {
       stockVal, shopSales, counterSales, totalExpenses,
       pendingBills, pendingPurchases, purchases, cashFlow
     ] = await Promise.all([
-      pool.query(`SELECT COALESCE(SUM(stock_value), 0) as total FROM inventory ${gFilter}`),
+      pool.query(`SELECT COALESCE(SUM((i.quantity_cases * p.selling_price) + (i.quantity_units * p.selling_price_per_unit)), 0) as total FROM inventory i JOIN products p ON i.product_id = p.id ${gid ? `WHERE i.godown_id = '${gid}'` : ''}`),
       pool.query(`SELECT COALESCE(SUM(b.total_amount), 0) as total FROM bills b WHERE DATE(b.created_at) >= ${dateFilter} ${gBillsAnd}`),
       pool.query(`SELECT COALESCE(SUM(cs.total_amount), 0) as total FROM counter_sales cs WHERE DATE(cs.created_at) >= ${dateFilter} ${gCsAnd}`),
       pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE DATE(created_at) >= ${dateFilter} ${gAnd}`),
