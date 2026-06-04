@@ -185,6 +185,12 @@ export default function Dashboard() {
               value={fmt(stats.total_expenses)}
               color="#111111"
             />
+            <StatCard
+              label="Free Products Given"
+              value={fmt(stats.free_products_value)}
+              color="#7c3aed"
+              sub="At selling price"
+            />
           </div>
 
           {/* Footer */}
