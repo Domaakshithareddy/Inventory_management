@@ -18,6 +18,7 @@ const allLinks = [
   { to: "/products", label: "Products" },
   { to: "/purchases", label: "Purchases" },
   { to: "/reports", label: "Reports" },
+  { to: "/returnables", label: "Returnables" },
   { to: "/routes", label: "Routes" },
   { to: "/shops", label: "Shops" },
   { to: "/transfers", label: "Transfers" },

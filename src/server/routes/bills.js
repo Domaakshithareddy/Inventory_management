@@ -133,6 +133,29 @@ router.post('/', auth, async (req, res) => {
       );
     }
 
+    // Track returnables — for each bill item where product is_returnable, upsert returnables table
+    for (const item of items) {
+      const prodCheck = await client.query(
+        `SELECT is_returnable, bottles_per_case FROM products WHERE id=$1`, [item.product_id]
+      );
+      if (prodCheck.rows[0]?.is_returnable) {
+        const bpc = parseInt(prodCheck.rows[0].bottles_per_case);
+        const totalBottlesSold = (parseInt(item.quantity_cases || 0) * bpc) + parseInt(item.quantity_units || 0);
+        if (totalBottlesSold > 0) {
+          await client.query(
+            `INSERT INTO returnables (godown_id, shop_id, product_id, quantity_out, last_bill_id)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (godown_id, shop_id, product_id)
+             DO UPDATE SET
+               quantity_out = returnables.quantity_out + $4,
+               last_bill_id = $5,
+               updated_at = CURRENT_TIMESTAMP`,
+            [godown_id, shop_id, item.product_id, totalBottlesSold, bill_id]
+          );
+        }
+      }
+    }
+
     await client.query('COMMIT');
     res.json(bill.rows[0]);
   } catch (err) {
@@ -283,10 +306,33 @@ router.delete('/:id', auth, async (req, res) => {
     }
     await client.query(`DELETE FROM free_products WHERE bill_id = $1`, [req.params.id]);
 
+    // Reverse returnables for this bill
+    const billItems = await client.query(
+      `SELECT bi.*, p.is_returnable, p.bottles_per_case FROM bill_items bi
+       JOIN products p ON bi.product_id = p.id WHERE bi.bill_id=$1`,
+      [req.params.id]
+    );
+    for (const item of billItems.rows) {
+      if (item.is_returnable) {
+        const bpc = parseInt(item.bottles_per_case);
+        const bottlesSold = (parseInt(item.quantity_cases || 0) * bpc) + parseInt(item.quantity_units || 0);
+        if (bottlesSold > 0) {
+          await client.query(
+            `UPDATE returnables SET
+               quantity_out = GREATEST(0, quantity_out - $1),
+               updated_at = CURRENT_TIMESTAMP
+             WHERE godown_id=$2 AND shop_id=$3 AND product_id=$4`,
+            [bottlesSold, godown_id, bill.rows[0].shop_id, item.product_id]
+          );
+        }
+      }
+    }
+
     await client.query(`DELETE FROM bill_items WHERE bill_id=$1`, [req.params.id]);
     await client.query(`DELETE FROM bills WHERE id=$1`, [req.params.id]);
     await client.query('COMMIT');
     res.json({ message: 'Bill deleted and inventory restored' });
+    
   } catch (err) {
     await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });
