@@ -34,7 +34,14 @@ router.get('/', auth, async (req, res) => {
       query += ` WHERE b.godown_id = $1`;
       params.push(req.user.godown_id);
     }
-    query += ` ORDER BY b.created_at DESC`;
+    const shopSearch = req.query.shop;
+    if (shopSearch) {
+      query += req.user.role === 'godown' ? ` AND s.name ILIKE $2` : ` WHERE s.name ILIKE $1`;
+      params.push(`%${shopSearch}%`);
+      query += ` ORDER BY b.created_at DESC`;
+    } else {
+      query += ` ORDER BY b.created_at DESC LIMIT 50`;
+    }
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
@@ -332,7 +339,7 @@ router.delete('/:id', auth, async (req, res) => {
     await client.query(`DELETE FROM bills WHERE id=$1`, [req.params.id]);
     await client.query('COMMIT');
     res.json({ message: 'Bill deleted and inventory restored' });
-    
+
   } catch (err) {
     await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });

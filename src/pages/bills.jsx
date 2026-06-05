@@ -78,20 +78,24 @@ export default function Bills() {
   const { user } = useAuth();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [shopSearch, setShopSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
   // Expanded rows state: { billId: items[] | "loading" }
   const [expandedItems, setExpandedItems] = useState({});
 
-  const makeTomorrow = () => { const t = new Date(); t.setDate(t.getDate() + 1); return t.toISOString().split("T")[0]; };
+  const makeToday = () => new Date().toISOString().split("T")[0];
 
   const [form, setForm] = useState({
-    shop_id: "", driver_id: "", delivery_date: makeTomorrow(), paid_amount: "",
+    shop_id: "", driver_id: "", delivery_date: makeToday(), paid_amount: "",
     items: [{ ...emptyItem }],
     freeItems: []
   });
 
-  const load = async () => {
-    const res = await api.get("/bills");
+  const load = async (shop = shopSearch) => {
+    const params = new URLSearchParams();
+    if (shop) params.append("shop", shop);
+    const res = await api.get(`/bills${params.toString() ? "?" + params.toString() : ""}`);
     let filtered = Array.isArray(res.data) ? res.data : [];
     if (startDate) { const start = new Date(startDate).setHours(0,0,0,0); filtered = filtered.filter(b => new Date(b.created_at).getTime() >= start); }
     if (endDate) { const end = new Date(endDate).setHours(23,59,59,999); filtered = filtered.filter(b => new Date(b.created_at).getTime() <= end); }
@@ -140,6 +144,8 @@ export default function Bills() {
 
   const applyFilter = () => load();
   const clearFilter = () => { setStartDate(""); setEndDate(""); load(); };
+  const handleShopSearch = () => { setShopSearch(searchInput); load(searchInput); };
+  const clearShopSearch = () => { setShopSearch(""); setSearchInput(""); load(""); };
   const toggleSelect = (id) => setSelectedBills(prev => prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]);
   const toggleSelectAll = () => setSelectedBills(selectedBills.length === bills.length ? [] : bills.map(b => b.id));
 
@@ -246,7 +252,7 @@ export default function Bills() {
      }
     
      setModal(false);
-     setForm({ shop_id: "", driver_id: "", delivery_date: makeTomorrow(), paid_amount: "", items: [{ ...emptyItem }], freeItems: [] });
+     setForm({ shop_id: "", driver_id: "", delivery_date: makeToday(), paid_amount: "", items: [{ ...emptyItem }], freeItems: [] });
      load();
    } catch (err) {
      setError(err.response?.data?.error || "Failed to generate bill");
@@ -353,12 +359,41 @@ export default function Bills() {
           {selectedBills.length > 0 && <button onClick={printLoadSheet} className="btn-secondary">Print Load Sheet ({selectedBills.length})</button>}
           {user?.role !== "admin" && (
             <button className="btn-primary" onClick={() => {
-              setForm({ shop_id: "", driver_id: "", delivery_date: makeTomorrow(), paid_amount: "", items: [{ ...emptyItem }], freeItems: [] });
+              setForm({ shop_id: "", driver_id: "", delivery_date: makeToday(), paid_amount: "", items: [{ ...emptyItem }], freeItems: [] });
               setError(""); setModal(true);
             }}>+ New Bill</button>
           )}
         </div>
       </div>
+
+      {/* Shop Search */}
+      <div style={{ marginBottom: "16px", display: "flex", gap: "12px", alignItems: "flex-end" }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: "11px", color: "#888", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600 }}>
+            Search by Shop Name
+          </label>
+          <input
+            className="input"
+            style={{ marginTop: "6px", width: "100%", boxSizing: "border-box" }}
+            placeholder="Type shop name and press Search..."
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleShopSearch()}
+          />
+        </div>
+        <button className="btn-primary" onClick={handleShopSearch}>Search</button>
+        {shopSearch && <button className="btn-outline" onClick={clearShopSearch}>Clear</button>}
+      </div>
+      {shopSearch && (
+        <div style={{ marginBottom: "16px", background: "#fff8f8", borderLeft: "4px solid #C8102E", padding: "10px 16px", fontSize: "13px", fontFamily: "'Barlow Condensed', sans-serif", color: "#C8102E", fontWeight: 700, letterSpacing: "0.04em" }}>
+          Showing all bills for shops matching "{shopSearch}" — {bills.length} found
+        </div>
+      )}
+      {!shopSearch && (
+        <div style={{ marginBottom: "16px", fontSize: "13px", color: "#aaa", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em" }}>
+          Showing latest 50 bills — search a shop name to see all its bills
+        </div>
+      )}
 
       {/* Date Filter */}
       <div style={{ background: "#f8f8f8", borderLeft: "4px solid #C8102E", padding: "16px", marginBottom: "24px", borderRadius: "4px" }}>
