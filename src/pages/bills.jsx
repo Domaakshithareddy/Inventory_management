@@ -312,7 +312,7 @@ export default function Bills() {
       <div class="shop-name">${bill.shop_name}</div>
       <div class="center small"><span>Route: </span><span>${bill.route_name || bill.godown_name}</span></div>
       <div class="line"></div>
-      <div class="row"><span>Bill No.:</span><span class="num">#${bill.bill_number}</span></div>
+      <div class="row"><span>Bill No.:</span><span class="num">${bill.bill_code || '#' + bill.bill_number}</span></div>
       <div class="row"><span>Date:</span><span class="num">${new Date(bill.created_at).toLocaleDateString('en-IN')}</span></div>
       <div class="row"><span>Shop:</span><span class="num">${bill.shop_name}</span></div>
       ${bill.driver_name ? `<div class="row"><span>Driver:</span><span class="num">${bill.driver_name}</span></div>` : ''}
@@ -401,7 +401,7 @@ export default function Bills() {
                     <td style={{ textAlign: "center" }}>
                       <input type="checkbox" checked={selectedBills.includes(b.id)} onChange={() => toggleSelect(b.id)} style={{ accentColor: "#C8102E" }} />
                     </td>
-                    <td style={{ fontFamily: "'IBM Plex Sans', sans-serif", fontWeight: 700, fontSize: "20px", color: "#C8102E" }}>#{b.bill_number}</td>
+                    <td style={{ fontFamily: "'IBM Plex Sans', sans-serif", fontWeight: 700, fontSize: "20px", color: "#C8102E" }}>{b.bill_code || `#${b.bill_number}`}</td>
                     <td style={{ color: "#555", fontSize: "15px" }}>{new Date(b.created_at).toLocaleDateString("en-IN")}</td>
                     <td style={{ fontWeight: 600, fontSize: "16px" }}>{b.shop_name}</td>
                     <td style={{ color: "#888", fontSize: "15px" }}>{b.godown_name}</td>
@@ -642,7 +642,7 @@ export default function Bills() {
             <div className="modal-box" style={{ maxWidth: "400px" }}>
               <div style={{ borderBottom: "2px solid #f0f0f0", paddingBottom: "16px", marginBottom: "20px" }}>
                 <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "2rem", fontWeight: 800, textTransform: "uppercase" }}>Edit Bill</h2>
-                <p style={{ fontSize: "13px", color: "#888", marginTop: "4px" }}>Bill #{b.bill_number} — {b.shop_name}</p>
+                <p style={{ fontSize: "13px", color: "#888", marginTop: "4px" }}>{b.bill_code || `#${b.bill_number}`} — {b.shop_name}</p>
               </div>
               <div style={{ marginBottom: "20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #f0f0f0" }}>

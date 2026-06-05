@@ -2,6 +2,23 @@ const router = require('express').Router();
 const pool = require('../db');
 const auth = require('../middleware/auth');
 
+const generateBillCode = async (client) => {
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, '0');
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const yy = String(today.getFullYear()).slice(-2);
+  const prefix = `B-${dd}${mm}${yy}`;
+  const result = await client.query(
+    `SELECT bill_code FROM bills WHERE bill_code LIKE $1 ORDER BY bill_code DESC LIMIT 1`,
+    [`${prefix}-%`]
+  );
+  let nextNum = 1;
+  if (result.rows[0]) {
+    nextNum = parseInt(result.rows[0].bill_code.split('-')[2]) + 1;
+  }
+  return `${prefix}-${nextNum}`;
+};
+
 router.get('/', auth, async (req, res) => {
   try {
     let query = `
@@ -68,11 +85,12 @@ router.post('/', auth, async (req, res) => {
     const pending = Math.max(0, total_amount - paid);
     const status = paid >= total_amount ? 'CLEARED' : paid > 0 ? 'PARTIAL' : 'PENDING';
 
-    const bill = await client.query(
-      `INSERT INTO bills (godown_id, shop_id, total_amount, paid_amount, pending_amount, status, driver_id, delivery_date)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [godown_id, shop_id, total_amount, paid, pending, status, driver_id || null, defaultDeliveryDate]
-    );
+    const bill_code = await generateBillCode(client);
+      const bill = await client.query(
+        `INSERT INTO bills (godown_id, shop_id, total_amount, paid_amount, pending_amount, status, driver_id, delivery_date, bill_code)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+        [godown_id, shop_id, total_amount, paid, pending, status, driver_id || null, defaultDeliveryDate, bill_code]
+      );
     const bill_id = bill.rows[0].id;
 
     for (const item of items) {
