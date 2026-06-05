@@ -215,9 +215,10 @@ export default function Bills() {
       if (!item.product_id) { setError("Please select a product for all items"); return; }
       if (!parseFloat(item.quantity_cases || 0) && !parseFloat(item.quantity_units || 0)) { setError("Please enter quantity for all items"); return; }
     }
-    setLoading(true);
-    try {
-      await api.post("/bills", {
+   setLoading(true);
+  try {
+      // Create bill and capture bill_id
+      const billRes = await api.post("/bills", {
         shop_id: form.shop_id, driver_id: form.driver_id, delivery_date: form.delivery_date,
         paid_amount: form.paid_amount || 0,
         items: form.items.map(item => ({
@@ -227,18 +228,31 @@ export default function Bills() {
           total_price: parseFloat(item.total_price || 0)
         }))
       });
+    
+      const billId = billRes.data.id;  // ✅ Capture bill ID
+    
+      // Link free products with bill_id
       for (const fi of form.freeItems) {
         if (!fi.product_id || !fi.quantity_units) continue;
-        await api.post("/free-products", { product_id: fi.product_id, quantity_units: parseInt(fi.quantity_units), shop_id: form.shop_id, given_date: form.delivery_date, notes: "Given with bill", sale_type: "DELIVERY" });
-      }
-      setModal(false);
-      setForm({ shop_id: "", driver_id: "", delivery_date: makeTomorrow(), paid_amount: "", items: [{ ...emptyItem }], freeItems: [] });
-      load();
-    } catch (err) {
-      setError(err.response?.data?.error || "Failed to generate bill");
-    } finally {
-      setLoading(false);
-    }
+        await api.post("/free-products", { 
+          product_id: fi.product_id, 
+          quantity_units: parseInt(fi.quantity_units), 
+          shop_id: form.shop_id, 
+          given_date: form.delivery_date, 
+          notes: "Given with bill", 
+          sale_type: "DELIVERY",
+          bill_id: billId  // ✅ ADD THIS
+       });
+     }
+    
+     setModal(false);
+     setForm({ shop_id: "", driver_id: "", delivery_date: makeTomorrow(), paid_amount: "", items: [{ ...emptyItem }], freeItems: [] });
+     load();
+   } catch (err) {
+     setError(err.response?.data?.error || "Failed to generate bill");
+   } finally {
+     setLoading(false);
+   }
   };
 
   const handleEdit = async () => {

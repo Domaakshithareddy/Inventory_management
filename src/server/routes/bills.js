@@ -211,6 +211,8 @@ router.delete('/:id', auth, async (req, res) => {
     const bill = await client.query(`SELECT * FROM bills WHERE id=$1`, [req.params.id]);
     if (!bill.rows[0]) return res.status(404).json({ error: 'Bill not found' });
     const godown_id = bill.rows[0].godown_id;
+
+    // Restore bill items inventory
     const items = await client.query(
       `SELECT bi.*, p.bottles_per_case FROM bill_items bi
        JOIN products p ON bi.product_id = p.id WHERE bi.bill_id = $1`,
@@ -234,6 +236,35 @@ router.delete('/:id', auth, async (req, res) => {
         );
       }
     }
+
+    // Restore free_products inventory linked to this bill, then delete them
+    const linkedFP = await client.query(
+      `SELECT * FROM free_products WHERE bill_id = $1`, [req.params.id]
+    );
+    for (const fp of linkedFP.rows) {
+      const prod = await client.query(
+        `SELECT bottles_per_case, selling_price_per_unit FROM products WHERE id=$1`, [fp.product_id]
+      );
+      if (prod.rows[0]) {
+        const bpc = parseInt(prod.rows[0].bottles_per_case);
+        const costRestored = fp.quantity_units * parseFloat(prod.rows[0].selling_price_per_unit || 0);
+        const inv = await client.query(
+          `SELECT quantity_cases, quantity_units FROM inventory WHERE godown_id=$1 AND product_id=$2`,
+          [fp.godown_id, fp.product_id]
+        );
+        if (inv.rows[0]) {
+          const currentBottles = (parseInt(inv.rows[0].quantity_cases) * bpc) + parseInt(inv.rows[0].quantity_units || 0);
+          const newTotal = currentBottles + parseInt(fp.quantity_units);
+          await client.query(
+            `UPDATE inventory SET quantity_cases=$1, quantity_units=$2, stock_value = stock_value + $3
+             WHERE godown_id=$4 AND product_id=$5`,
+            [Math.floor(newTotal / bpc), newTotal % bpc, costRestored, fp.godown_id, fp.product_id]
+          );
+        }
+      }
+    }
+    await client.query(`DELETE FROM free_products WHERE bill_id = $1`, [req.params.id]);
+
     await client.query(`DELETE FROM bill_items WHERE bill_id=$1`, [req.params.id]);
     await client.query(`DELETE FROM bills WHERE id=$1`, [req.params.id]);
     await client.query('COMMIT');
