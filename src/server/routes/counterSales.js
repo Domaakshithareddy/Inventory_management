@@ -124,6 +124,14 @@ router.post('/', auth, async (req, res) => {
       );
     }
 
+    if (mode === 'ONLINE') {
+      await client.query(
+        `INSERT INTO online_transactions (godown_id, is_counter_sale, amount, transaction_date, notes, counter_sale_id)
+         VALUES ($1, true, $2, CURRENT_DATE, 'Counter sale online payment', $3)`,
+        [godown_id, total_amount, counter_sale_id]
+      );
+    }
+
     await client.query('COMMIT');
     res.json(session.rows[0]);
   } catch (err) {
@@ -305,8 +313,18 @@ router.put('/:id', auth, async (req, res) => {
       [total_amount, mode, req.params.id]
     );
 
+    await client.query(`DELETE FROM online_transactions WHERE counter_sale_id = $1`, [req.params.id]);
+    if (mode === 'ONLINE') {
+      await client.query(
+        `INSERT INTO online_transactions (godown_id, is_counter_sale, amount, transaction_date, notes, counter_sale_id)
+         VALUES ($1, true, $2, CURRENT_DATE, 'Counter sale online payment', $3)`,
+        [godown_id, total_amount, req.params.id]
+      );
+    }
+
     await client.query('COMMIT');
     res.json(result.rows[0]);
+    
   } catch (err) {
     await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });
